@@ -16,28 +16,100 @@ namespace MLGame
 {
     public class test2
     {
-        static void Main(string[] args)
+        // 忽略的一些内容，为了简单，暂时只支持两种，一种是文件，比如 *.user，另一种是文件夹比如 bin/，忽略大小写
+        static HashSet<string> GlobalIgnores = new HashSet<string>();
+        static HashSet<string> GlobalIgnoreDirs = new HashSet<string>();
+        static HashSet<string> GlobalIgnoreWildCards = new HashSet<string>();
+
+        static bool IsGlobalIgnore(string filename)
         {
-#if TEST
-            CombineAll();
-            UnCombineAll();
-#else
-            if (args.Length > 1)
+            string shortName = filename.Contains("\\") ? filename.Substring(filename.LastIndexOf("\\") + 1) : filename;
+
+            shortName = shortName.ToLower();
+            if (Directory.Exists(filename))
             {
-                Console.WriteLine("执行：" + args[0]);
-                if (args[0] == "-e")
+                shortName += "\\";
+                foreach (var it in GlobalIgnoreDirs)
                 {
-                    CombineAll(args[1]);
-                }
-                else if (args[0] == "-d")
-                {
-                    UnCombineAll(args[1]);
+                    if (it.Equals(shortName))
+                    {
+                        return true;
+                    }
                 }
             }
             else
             {
-                Console.WriteLine("格式不正确，使用这种格式，比如加密D盘aaa文件夹中的内容，那么命令为： enc -e d:\aaa");
+                foreach (var it in GlobalIgnoreWildCards)
+                {
+                    if (shortName.EndsWith(it))
+                    {
+                        return true;
+                    }
+                }
+            }           
+
+            return false;
+        }
+
+        static void Main(string[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].StartsWith("--ignore="))
+                {
+                    string ignores = args[i].Substring("--ignore=".Length);
+                    string[] ignore_array = ignores.Split(';');
+                    foreach (var it in ignore_array)
+                    {
+                        string v = it.ToLower();
+                        if (!GlobalIgnores.Contains(v))
+                        {
+                            GlobalIgnores.Add(v);
+                        }
+                    }
+                }
             }
+            foreach (var it in GlobalIgnores)
+            {
+                if (it.EndsWith("/"))
+                {
+                    GlobalIgnoreDirs.Add(it.Replace("/", "\\"));
+                }
+                else if (it.StartsWith("*."))
+                {
+                    GlobalIgnoreWildCards.Add(it.Substring(1));
+                }
+            }
+
+
+#if TEST
+            CombineAll();
+            UnCombineAll();
+#else
+                if (args.Length > 1)
+                {
+                    Console.WriteLine("执行：" + args[0]);
+                    if (args[0] == "-e")
+                    {
+                        CombineAll(args[1]);
+                    }
+                    else if (args[0] == "-d")
+                    {
+                        UnCombineAll(args[1]);
+                    }
+                    else if (args[0] == "-ec")
+                    {
+                        CombineAndGZip(args[1]);
+                    }
+                    else if (args[0] == "-dc")
+                    {
+                        UnCombineAndUnGZip(args[1]);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("格式不正确，使用这种格式，比如加密D盘aaa文件夹中的内容，那么命令为： enc -e d:\aaa");
+                }
 #endif
         }
         public static void CombineAll()
@@ -50,6 +122,15 @@ namespace MLGame
         public static void CombineAll(string dir)
         {
             CombineAll(dir, dir + ".bin");
+        }
+        public static void CombineAndGZip(string dir)
+        {
+            dir = dir.Replace('/', '\\');
+            string outFileName = dir + ".bin";
+            string compressedFile = outFileName + ".bc";
+
+            CombineAll(dir, outFileName);
+            GZipFile(outFileName, compressedFile);
         }
         public static void CombineAll(string dir, string outFilename)
         {
@@ -88,6 +169,15 @@ namespace MLGame
             string shortName = inFilename.Contains(".") ? inFilename.Substring(0, inFilename.LastIndexOf(".")) : inFilename;
             UnCombineAll(inFilename, shortName + "_uncombined");
         }
+        public static void UnCombineAndUnGZip(string inFilename)
+        {
+            string outFilename = inFilename + "-temp\\temp.bin";
+            UnGZipFile(inFilename, outFilename);
+
+            inFilename = outFilename;
+            string shortName = inFilename.Contains(".") ? inFilename.Substring(0, inFilename.LastIndexOf(".")) : inFilename;
+            UnCombineAll(inFilename, shortName + "_uncombined");
+        }
         public static void UnCombineAll(string inFilename, string dir)
         {
             inFilename = inFilename.Replace('/', '\\');
@@ -99,7 +189,13 @@ namespace MLGame
         }
         static void Combine(string fileName, string baseDir, Stream outputStream)
         {
-            Console.WriteLine("整合：" + fileName);
+            if (IsGlobalIgnore(fileName))
+            {
+                Console.WriteLine("忽略整合：" + fileName);
+                return;
+            }
+
+            //Console.WriteLine("整合：" + fileName);
 
 
             bool bdir = Directory.Exists(fileName);
@@ -219,6 +315,11 @@ namespace MLGame
         {
             string inFilename = "D:\\123\\gzip\\123.txt";
             string outFilename = "D:\\123\\gzip\\123.txt.gzip";
+            GZipFile(inFilename, outFilename);
+        }
+        static void GZipFile(string inFilename, string outFilename)
+        {
+            Console.Write("压缩“" + inFilename + "”到“" + outFilename + "”");
             FileStream outFile = File.OpenWrite(outFilename);
             FileStream inFile = File.OpenRead(inFilename);
             GZipStream gzip = new GZipStream(outFile, CompressionLevel.Fastest);
@@ -243,7 +344,16 @@ namespace MLGame
         {
             string inFilename = "D:\\123\\gzip\\123.txt.gzip";
             string outFilename = "D:\\123\\gzip\\123-unzip.txt";
+            UnGZipFile(inFilename, outFilename);
+        }
+        static void UnGZipFile(string inFilename, string outFilename)
+        {
+            Console.Write("解压缩“" + inFilename + "”到“" + outFilename + "”");
             FileStream inFile = File.OpenRead(inFilename);
+            if (outFilename.Contains("\\"))
+            {
+                Directory.CreateDirectory(outFilename.Substring(0, outFilename.LastIndexOf("\\")));
+            }
             FileStream outFile = File.OpenWrite(outFilename);
             GZipStream gzip = new GZipStream(inFile, CompressionMode.Decompress);
 
