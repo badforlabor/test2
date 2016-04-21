@@ -71,7 +71,7 @@ namespace MLGame
              *          顺延的第1~4个字节，表示文件大小
              *          顺延的第5~N个字节，表示文件内容
              * ***/
-            Combine(dir, outputStream);
+            Combine(dir, dir.Contains("\\") ? dir.Substring(0, dir.LastIndexOf('\\')) : "", outputStream);
             outputStream.WriteByte(3);
 
             outputStream.Flush();
@@ -97,7 +97,7 @@ namespace MLGame
             UnCombine(inputStream, dir);
             inFilename.Clone();
         }
-        static void Combine(string fileName, Stream outputStream)
+        static void Combine(string fileName, string baseDir, Stream outputStream)
         {
             Console.WriteLine("整合：" + fileName);
 
@@ -112,7 +112,7 @@ namespace MLGame
                 outputStream.WriteByte(1);
             }
 
-            string shortName = fileName.Substring(fileName.LastIndexOf("\\") + 1);
+            string shortName = fileName.Substring(baseDir.Length == 0 ? 0 : baseDir.Length + 1);
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(shortName);
             byte[] len = BitConverter.GetBytes(bytes.Length);
             outputStream.Write(len, 0, len.Length);
@@ -123,13 +123,13 @@ namespace MLGame
                 string[] files = Directory.GetFiles(fileName);
                 foreach(var f in files)
                 {
-                    Combine(f, outputStream);
+                    Combine(f, baseDir, outputStream);
                 }
 
                 string[] dirs = Directory.GetDirectories(fileName);
                 foreach(var d in dirs)
                 {
-                    Combine(d, outputStream);
+                    Combine(d, baseDir, outputStream);
                 }
             }
             else
@@ -212,7 +212,7 @@ namespace MLGame
                 Directory.CreateDirectory(filename);
 
                 // 进入文件夹内读取
-                UnCombine(inputStream, filename);
+                UnCombine(inputStream, baseDirName);
             }
         }
         public static void TestGzip()
