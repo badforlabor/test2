@@ -1,0 +1,47 @@
+<root>
+	<!-- 环境变量 -->
+	<env log="1" />
+	
+   <assembly fullname="System">
+		<type fullname="System.ComponentModel.TypeDescriptor" preserve="all"/>
+		<type fullname="System.ComponentModel.TypeConverter" preserve="all"/>
+		<type fullname="System.ComponentModel.StringConverter" preserve="all"/>
+		<type fullname="System.ComponentModel.BooleanConverter" preserve="all"/>
+		<type fullname="System.ComponentModel.EnumConverter" preserve="all"/>
+		<type fullname="System.ComponentModel.Int64Converter" preserve="all"/>
+		<type fullname="System.ComponentModel.Int32Converter" preserve="all"/>
+		<type fullname="System.ComponentModel.Int16Converter" preserve="all"/>
+		<type fullname="System.ComponentModel.ArrayConverter" preserve="all"/>
+		<type fullname="System.ComponentModel.CollectionConverter" preserve="all"/>
+		<type fullname="System.ComponentModel.DecimalConverter" preserve="all"/>
+		<type fullname="System.ComponentModel.SingleConverter" preserve="all"/>
+		<type fullname="System.ComponentModel.DoubleConverter" preserve="all"/>
+		<type fullname="System.Net.HttpRequestCreator" preserve="all"/>
+	</assembly>
+
+	<assembly fullname="GameFrameWork">
+		<namespace fullname="MLGame" preserve="all"/>
+		<namespace fullname="HTMLEngine.NGUI" preserve="all" />
+	</assembly>
+	<assembly fullname="GameFrameWork2">
+		<namespace fullname="MLGame" preserve="all"/>
+		<namespace fullname="HTMLEngine.NGUI" preserve="all" />
+	</assembly>
+	<assembly fullname="Update">
+		<namespace fullname="MLGame" preserve="all"/>
+		<namespace fullname="MLGameEx2" preserve="all" />
+	</assembly>
+
+	<assembly fullname="Extension">
+		<namespace fullname="Pathfinding" preserve="all"/>
+		<namespace fullname="Pathfinding.RVO" preserve="all"/>
+		<namespace fullname="Pathfinding.Serialization" preserve="all"/>
+		<namespace fullname="Pathfinding.Util" preserve="all"/>
+		<namespace fullname="Pathfinding.Voxels" preserve="all"/>
+		<namespace fullname="Pathfinding.Voxels" preserve="all"/>
+		<namespace fullname="MLGame" preserve="all"/>
+		<namespace fullname="LitJson" preserve="all"/>
+		<namespace fullname="HTMLEngine" preserve="all" />
+		<namespace fullname="HTMLEngine.Core" preserve="all" />
+	</assembly>	
+</root>
