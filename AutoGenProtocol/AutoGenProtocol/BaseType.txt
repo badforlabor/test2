@@ -1,0 +1,10 @@
+namespace MLGame
+{
+	public class ${BaseType.Type}
+	{
+#foreach($member in $BaseType.Members)
+		${member.Comment}
+		public ${member.Type} ${member.MemberName};
+#end
+	}
+}

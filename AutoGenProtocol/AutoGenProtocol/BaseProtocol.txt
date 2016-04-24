@@ -1,0 +1,12 @@
+namespace MLGame
+{
+	[MLMessageProvider(MLMessageType.${BaseType.Type}Data)]
+	public class ${BaseType.Type} : MLCGMessage
+	{
+#foreach($member in $BaseType.Members)
+		${member.Comment}
+		public ${member.Type} ${member.MemberName};
+#end
+		public ${BaseType.Type}()
+	}
+}
