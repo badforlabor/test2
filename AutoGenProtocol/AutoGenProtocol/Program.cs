@@ -4,9 +4,25 @@ using System.Linq;
 using System.Text;
 using System.Xml;
 using System.IO;
+using NVelocity;
+using NVelocity.App;
+using NVelocity.Runtime;
+using NVelocity.Context;
 
 namespace AutoGenProtocol
 {
+    class MemberType
+    {
+        public string Type;
+        public string MemberName;
+        public string Comment;
+    }
+    class BaseType
+    {
+        public string Type;
+        public string Comment;
+        public List<MemberType> Members;
+    }
     class Program
     {
         static string BaseDir = "auto_gen/";
@@ -87,6 +103,23 @@ namespace AutoGenProtocol
             // 协议注释
             string comment = classXmlData.Attributes["comment"] == null ? "" : classXmlData.Attributes["comment"].Value;
 
+            BaseType baseType = new BaseType();
+            baseType.Comment = comment;
+            baseType.Type = MarkedName;
+            baseType.Members = new List<MemberType>();
+            for (int i = 0; i < classXmlData.ChildNodes.Count; i++)
+            {
+                XmlNode node = classXmlData.ChildNodes[i];
+                MemberType mt = new MemberType();
+                mt.Comment = node.Attributes["comment"] == null ? "" : node.Attributes["comment"].Value;
+                mt.Type = node.Attributes["type"].Value;
+                mt.MemberName = ToMarked(node.Attributes["name"].Value);
+                baseType.Members.Add(mt);
+            }
+
+            GenerateFile(baseType, "BaseProtocol.txt");
+#if false
+
             StringBuilder builder = new StringBuilder();
             builder.Append("\n");
             builder.Append("/****************************************************************************\n");
@@ -115,8 +148,37 @@ namespace AutoGenProtocol
                 builder.Append("\tclass " + MarkedName + "\n");
             }
             builder.Append("\t{\n\n");
-
+#endif
         }
+
+        static void GenerateFile(BaseType bt, string fileName)
+        {
+            string file = "D:\\liubo\\github2\\test2\\AutoGenProtocol\\AutoGenProtocol\\" + fileName;
+
+            VelocityEngine vltEngine = new VelocityEngine();
+            vltEngine.SetProperty(RuntimeConstants_Fields.RESOURCE_LOADER, "file");
+            vltEngine.SetProperty(RuntimeConstants_Fields.FILE_RESOURCE_LOADER_PATH, "D:\\liubo\\github2\\test2\\AutoGenProtocol\\AutoGenProtocol\\");
+            vltEngine.Init();
+
+            VelocityContext context1 = new VelocityContext();
+            context1.Put("BaseType", bt);
+
+            if (File.Exists(file))
+            {
+                Console.WriteLine("存在模板文件！");
+            }
+
+            Template template = vltEngine.GetTemplate(fileName);
+
+            StringWriter autoScriptWriter = new StringWriter();
+            template.Merge(context1, autoScriptWriter);
+
+            File.WriteAllText(@"D:\liubo\github2\test2\AutoGenProtocol\AutoGenProtocol\auto-gen\" + bt.Type + ".cs", autoScriptWriter.GetStringBuilder().ToString());
+        }
+
+
+
+
         static string ToMarked(string str)
         {
             string[] str_array = str.Split('_');

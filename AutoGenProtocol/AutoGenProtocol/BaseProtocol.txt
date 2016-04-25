@@ -7,6 +7,21 @@ namespace MLGame
 		${member.Comment}
 		public ${member.Type} ${member.MemberName};
 #end
-		public ${BaseType.Type}()
+#set($memberSize = $BaseType.Members.Length - 1)
+		public ${BaseType.Type}(
+#foreach($i in [0..$memberSize])
+	#if ($i != $memberSize)
+		$BaseType.Members[$i].Type t$BaseType.Members[$i].MemberName,
+	#else
+		$BaseType.Members[$i].Type t$BaseType.Members[$i].MemberName,
+	#end
+#end
+		)
+		{
+		
+#foreach($member in $BaseType.Members)
+		${member.MemberName} = t$BaseType.Members[$i].MemberName;
+#end
+		}
 	}
 }
