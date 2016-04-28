@@ -1,9 +1,13 @@
-﻿
-namespace MLGame
+/****************************************************************************
+ * author : auto-gen-tool
+ * purpose : 自动生成的代码，不要擅自修改
+ * purpose : $BaseType.comment
+****************************************************************************/
+namespace SHGame
 {
 	// $BaseType.comment
-	[MLMessageProvider(MLMessageType.${BaseType.TypeName}Data)]
-	public class ${BaseType.TypeName} : MLCGMessage
+	[SHMessageProvider(SHMessageType.${BaseType.TypeName}Data)]
+	public class ${BaseType.TypeName} : SHGCMessage
 	{
 #foreach($member in $BaseType.Members)
 		// ${member.Comment}

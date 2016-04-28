@@ -2,11 +2,15 @@
 	<!-- 环境变量 -->
 	<env log="1" />
 	
-	<baseType name="AchievementModel" comment="成就">
+	<baseType name="AchievementModel" comment="成就" folder="Data">
 		<member type="int" name="template_id" comment="模板id" />
+		<member type="string" name="template_name" comment="模板name" />
 	</baseType>
 	
 	<protocol name="cg_active" comment="协议注释">
+	</protocol>
+	
+	<protocol name="gc_active" comment="协议注释">
 		<member type="string" name="active_code" comment="成员变量注释"/>
 	</protocol>
 </root>
