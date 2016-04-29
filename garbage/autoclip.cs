@@ -11,6 +11,8 @@ using UnityEditor;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using NPOI.HSSF.UserModel;
 
 namespace MLGame
 {
@@ -90,6 +92,8 @@ namespace MLGame
              *      如果有新加的，那么加入新的信息
              * **/
 
+            // 读取excel
+
 
             // 获取m_AnimationClip，然后处理
 
@@ -165,6 +169,75 @@ namespace MLGame
                     Debug.Log("[显示属性] sp.name=" + sp.displayName + ", " + sp.name);
                 } while (sp.Next(false));
             }
+        }
+
+        Dictionary<string, ConfigFile> ReadXML(string path)
+        {
+            //path = Application.dataPath + "/../Builder/builder_config.xls";
+
+            Dictionary<string, ConfigFile> ret = new Dictionary<string, ConfigFile>();
+
+            // !< 说明:客户端的表读取,就不走服务器那样的复杂处理啦..
+            HSSFWorkbook wk = new HSSFWorkbook(File.OpenRead(path));
+            HSSFSheet sheet = null;
+            string sheetname = "";
+            for (int a = 0; a < wk.NumberOfSheets; ++a)
+            {
+                sheet = wk.GetSheetAt(a) as HSSFSheet;
+                sheetname = wk.GetSheetName(a);
+                if (sheet == null)
+                {
+                    Debug.LogError("异常!" + wk.GetFullName());
+                    continue;
+                }
+                if (ret.ContainsKey(sheetname))
+                {
+                    Debug.LogError("该excel表的sheet名字重复了：" + wk.GetSheetName(a));
+                }
+                else
+                {
+                    ConfigFile result = new ConfigFile(wk.GetFullName() + "_" + sheetname);
+                    List<String> header = new List<string>();
+                    for (int i = sheet.FirstRowNum; i <= sheet.LastRowNum; ++i)
+                    {
+                        HSSFRow row = sheet.GetRow(i) as HSSFRow;
+                        if (row == null) continue;
+                        ArrayList line = new ArrayList();
+                        for (int j = row.FirstCellNum; j <= row.LastCellNum; ++j)
+                        {
+                            HSSFCell cell = row.GetCell(j) as HSSFCell;
+                            if (cell == null) continue;
+                            if (i == sheet.FirstRowNum)
+                            {
+                                header.Add(cell.ToString());
+                            }
+                            else
+                            {
+                                line.Add(cell.ToString());
+                            }
+                        }
+                        if (i == sheet.FirstRowNum)
+                        {
+                            result.SetTitles(header.ToArray());
+                        }
+                        else
+                        {
+                            if (line.Count > 0)
+                            {
+                                result.AddData(line[0] as String, line);
+                            }
+                            else
+                            {
+                                // !< 读完了?
+                                break;
+                            }
+                        }
+                    }
+                    ret.Add(sheetname, result);
+                }
+            }
+
+            return ret;
         }
     }
 }
