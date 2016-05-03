@@ -13,6 +13,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using NPOI.HSSF.UserModel;
+using System.Text;
+using System.Reflection;
 
 namespace MLGame
 {
@@ -21,6 +23,17 @@ namespace MLGame
         public static void SetStringValue(this SerializedProperty self, string propertyName, string value)
         {
             self.FindPropertyRelative(propertyName).stringValue = value;
+        }
+		
+		public static T GetColumnUnsafe<T>(this ConfigLine self, string column)
+        {
+            try
+            {
+                return self.GetColumn<T>(column);
+            }
+            catch (Exception e)
+            { }
+            return default(T);
         }
     }
 
@@ -92,72 +105,155 @@ namespace MLGame
              *      如果有新加的，那么加入新的信息
              * **/
 
-            // 读取excel
-            Dictionary<string, ConfigFile> excels = ReadXML(Application.dataPath + "/Art/animations.xls");
-            foreach (var it in excels)
+            // 匿名函数
+
+            System.Func<bool, ConfigLine, SerializedProperty, int> SetPropertyFunction = delegate(bool IsHumanClip, ConfigLine csv_line, SerializedProperty sp)
             {
-                Debug.Log("处理：" + it.Key);
-                ConfigFile csv = it.Value;
-                string[] assets = AssetDatabase.FindAssets(it.Key, new string[] {"Assets/Art"});
-                if (assets.Length > 0)
+                sp.FindPropertyRelative("firstFrame").floatValue = csv_line.GetColumnUnsafe<float>("firstFrame");
+                sp.FindPropertyRelative("lastFrame").floatValue = csv_line.GetColumnUnsafe<float>("lastFrame");
+
+                // LoopTime, LoopPose
+                sp.FindPropertyRelative("loopTime").boolValue = csv_line.GetColumnUnsafe<int>("loopTime") > 0;
+                sp.FindPropertyRelative("loopBlend").boolValue = csv_line.GetColumnUnsafe<int>("loopBlend") > 0;
+
+                // Rotation_BakeIntoPose, Rotation_BaseUpon
+                sp.FindPropertyRelative("loopBlendOrientation").boolValue = csv_line.GetColumnUnsafe<int>("loopBlendOrientation") > 0;
+                sp.FindPropertyRelative("keepOriginalOrientation").boolValue = csv_line.GetColumnUnsafe<int>("keepOriginalOrientation") == 0;
+
+                // PositionY_BakeIntoPose, PositionY_BaseUpon
+                sp.FindPropertyRelative("loopBlendPositionY").boolValue = csv_line.GetColumnUnsafe<int>("loopBlendPositionY") > 0;
+                if (IsHumanClip)
                 {
-                    string asset = AssetDatabase.GUIDToAssetPath(assets[0]);
-                    ModelImporter modelImporter = (ModelImporter)AssetImporter.GetAtPath(asset);
-                    SerializedObject serializedObject = modelImporter == null ? null : new SerializedObject(modelImporter);
-                    HashSet<string> processed_clip = new HashSet<string>();
-                    if (serializedObject == null)
+                    // 如果是humanoid类型的动画，那么keepOriginalPositionY的取值为0，1，2三种。
+                    sp.FindPropertyRelative("keepOriginalPositionY").boolValue = csv_line.GetColumnUnsafe<int>("keepOriginalPositionY") == 0;
+                    sp.FindPropertyRelative("heightFromFeet").boolValue = csv_line.GetColumnUnsafe<int>("keepOriginalPositionY") == 2;
+                }
+                else
+                {
+                    sp.FindPropertyRelative("keepOriginalPositionY").boolValue = csv_line.GetColumnUnsafe<int>("keepOriginalPositionY") == 0;
+                }
+
+                // PositionXZ_BakeIntoPose, PositionXZ_BaseUpon
+                sp.FindPropertyRelative("loopBlendPositionXZ").boolValue = csv_line.GetColumnUnsafe<int>("loopBlendPositionXZ") > 0;
+                sp.FindPropertyRelative("keepOriginalPositionXZ").boolValue = csv_line.GetColumnUnsafe<int>("keepOriginalPositionXZ") == 0;
+                return 0;
+            };
+
+
+            // 读取excel
+            string[] files = Directory.GetFiles(Application.dataPath + "/Art/", "animations*.xls", SearchOption.AllDirectories);
+            foreach (var fileName in files)
+            {
+                Debug.Log("读取xls文件：" + fileName);
+                Dictionary<string, ConfigFile> excels = ReadXML(fileName);// ReadXML(Application.dataPath + "/Art/animations.xls");
+                foreach (var it in excels)
+                {
+                    Debug.Log("处理：" + it.Key);
+                    ConfigFile csv = it.Value;
+                    string[] assets = AssetDatabase.FindAssets(it.Key, new string[] { "Assets/Art" });
+                    if (assets.Length > 0)
                     {
-                        Debug.Log("无法处理该文件：" + asset);
+                        string asset = AssetDatabase.GUIDToAssetPath(assets[0]);
+                        
+                        ModelImporter modelImporter = (ModelImporter)AssetImporter.GetAtPath(asset);
+
+                        SerializedObject serializedObject = modelImporter == null ? null : new SerializedObject(modelImporter);
+                        ModelImporterAnimationType m_AnimationType = (ModelImporterAnimationType)serializedObject.FindProperty("m_AnimationType").intValue;
+                        bool IsHumanClip = m_AnimationType == ModelImporterAnimationType.Human;
+                        HashSet<string> processed_clip = new HashSet<string>();
+                        if (serializedObject == null)
+                        {
+                            Debug.Log("无法处理该文件：" + asset);
+                        }
+                        else
+                        {
+                            // 压缩方式
+                            serializedObject.FindProperty("m_AnimationCompression").intValue = (int)ModelImporterAnimationCompression.Optimal;
+
+                            // 切割或者merge动画
+                            SerializedProperty m_ClipAnimations = serializedObject.FindProperty("m_ClipAnimations");
+                            for (int i = 0; i < m_ClipAnimations.arraySize; i++)
+                            {
+                                SerializedProperty sp = m_ClipAnimations.GetArrayElementAtIndex(i);
+                                string clip_name = sp.FindPropertyRelative("name").stringValue;
+                                if (clip_name.Contains("@"))
+                                {
+                                    clip_name = clip_name.Substring(clip_name.LastIndexOf("@") + 1);
+                                }
+                                ConfigLine csv_line = csv.FindData(clip_name);
+                                if (csv_line != null)
+                                {
+                                    processed_clip.Add(clip_name);
+
+                                    // merge基本属性
+                                    SetPropertyFunction(IsHumanClip, csv_line, sp);
+
+                                    // 其他属性，如event，mask，都不处理，保持原来信息
+                                }
+                            }
+
+                            // 把剩下没处理的内容，作为新的动画，分割到fbx中
+                            Dictionary<string, ConfigLine> csv_data = csv.GetLines();
+                            foreach (var kt in csv_data)
+                            {
+                                if (processed_clip.Contains(kt.Key))
+                                {
+                                    continue;
+                                }
+                                processed_clip.Add(kt.Key);
+                                ConfigLine csv_line = kt.Value;
+
+                                m_ClipAnimations.InsertArrayElementAtIndex(m_ClipAnimations.arraySize);
+                                SerializedProperty sp = m_ClipAnimations.GetArrayElementAtIndex(m_ClipAnimations.arraySize - 1);
+
+                                sp.FindPropertyRelative("name").stringValue = it.Key + "@" + kt.Key;
+                                sp.FindPropertyRelative("takeName").stringValue = "Take 001";
+
+                                // 处理基本属性
+                                SetPropertyFunction(IsHumanClip, csv_line, sp);
+
+                                // 设置mask
+                                UnityEditorInternal.AvatarMask mask = new UnityEditorInternal.AvatarMask();
+                                mask.transformCount = modelImporter.transformPaths.Length;
+                                for (int i = 0; i < modelImporter.transformPaths.Length; i++)
+                                {
+                                    mask.SetTransformPath(i, modelImporter.transformPaths[i]);
+                                    mask.SetTransformActive(i, true);
+                                }
+                                SerializedProperty bodyMask = sp.FindPropertyRelative("bodyMask");
+                                if (bodyMask != null && bodyMask.isArray)
+                                {
+                                    for (int i = 0; i < mask.humanoidBodyPartCount; i++)
+                                    {
+                                        if (i >= bodyMask.arraySize) bodyMask.InsertArrayElementAtIndex(i);
+                                        bodyMask.GetArrayElementAtIndex(i).intValue = mask.GetHumanoidBodyPartActive(i) ? 1 : 0;
+                                    }
+                                }
+                                SerializedProperty transformMask = sp.FindPropertyRelative("transformMask");
+                                //ModelImporter.UpdateTransformMask(mask, transformMask);
+                                Type ty = typeof(ModelImporter);
+                                MethodInfo mi = ty.GetMethod("UpdateTransformMask", BindingFlags.Static | BindingFlags.NonPublic);
+                                if (mi != null)
+                                {
+                                    mi.Invoke(null, new object[] { mask, transformMask });
+                                }
+                                else
+                                {
+                                    Debug.LogError("无法找到此方法！");
+                                }
+                            }
+
+                            serializedObject.ApplyModifiedProperties();
+                            AssetDatabase.WriteImportSettingsIfDirty(asset);
+                            AssetDatabase.ImportAsset(asset);
+                        }
                     }
                     else
-                    { 
-                        SerializedProperty m_ClipAnimations = serializedObject.FindProperty("m_ClipAnimations");
-                        for (int i = 0; i < m_ClipAnimations.arraySize; i++)
-                        {
-                            SerializedProperty sp = m_ClipAnimations.GetArrayElementAtIndex(i);
-                            string clip_name = sp.FindPropertyRelative("name").stringValue;
-                            if (clip_name.Contains("@"))
-                            {
-                                clip_name = clip_name.Substring(clip_name.LastIndexOf("@") + 1);
-                            }
-                            ConfigLine csv_line = csv.FindData(clip_name);
-                            if (csv_line != null)
-                            {
-                                processed_clip.Add(clip_name);
-
-                                // 处理
-                                sp.FindPropertyRelative("firstFrame").floatValue = csv_line.GetColumn<float>("firstFrame");
-                                sp.FindPropertyRelative("lastFrame").floatValue = csv_line.GetColumn<float>("lastFrame");
-                            }
-                        }
-
-                        // 把剩下没处理的内容，作为新的动画，分割到fbx中
-                        Dictionary<string, ConfigLine> csv_data = csv.GetLines();
-                        foreach (var kt in csv_data)
-                        {
-                            if (processed_clip.Contains(kt.Key))
-                            {
-                                continue;
-                            }
-                            processed_clip.Add(kt.Key);
-                            ConfigLine csv_line = kt.Value;
-
-                            m_ClipAnimations.InsertArrayElementAtIndex(m_ClipAnimations.arraySize);
-                            SerializedProperty sp = m_ClipAnimations.GetArrayElementAtIndex(m_ClipAnimations.arraySize - 1);
-
-                            sp.FindPropertyRelative("name").stringValue = it.Key + "@" + kt.Key;
-                            sp.FindPropertyRelative("firstFrame").floatValue = csv_line.GetColumn<float>("firstFrame");
-                            sp.FindPropertyRelative("lastFrame").floatValue = csv_line.GetColumn<float>("lastFrame");
-                        }
-
-                        serializedObject.ApplyModifiedProperties();
-                        AssetDatabase.WriteImportSettingsIfDirty(asset);
+                    {
+                        Debug.LogError("无法找到这个FBX文件：" + it.Key);
                     }
-
                 }
             }
-
-
         }
         [MenuItem("liubo/切割选中的动画3")]
         public static void AutoClip3()
