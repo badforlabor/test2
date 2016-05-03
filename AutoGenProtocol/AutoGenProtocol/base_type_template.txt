@@ -16,12 +16,9 @@ namespace SHGame
 		public ${member.TypeName} ${member.MemberName};
 #end
 #end
-#if ($BaseType.Members.Count > 0)
 
-#end
-#if ($BaseType.Members.Count == 0)
 		public ${BaseType.TypeName}() {}
-#else
+
 #set($i = 0)
 #set($allsize = $BaseType.Members.Count - 1)
 		public ${BaseType.TypeName}(
@@ -47,32 +44,11 @@ namespace SHGame
 			${member.MemberName} = _${member.MemberName};
 #end
 		}
-#end
 
 		public void Serialize(MLISerialize ar)
 		{				
 #foreach($member in $BaseType.Members)
-#if (${member.IsArray})
-
-			int ${member.MemberName}Length = ar.IsReader ? 0 : ${member.MemberName}.Length;
-			ar.Serialize(ref ${member.MemberName}Length);
-			${member.MemberName} = ar.IsReader ? ${member.MemberName} : new ${member.TypeName}[${member.MemberName}Length];
-			for(int i=0; i<${member.MemberName}Length; i++)
-			{
-#if (${member.IsBaseType})
-				ar.Serialize(ref ${member.MemberName}[i]);
-#else
-				${member.MemberName}[i] = ar.Serialize(${member.MemberName}[i], typeof(${member.TypeName})) as ${member.TypeName};				
-#end
-			}
-			
-#else
-#if (${member.IsBaseType})
-			ar.Serialize(ref ${member.MemberName});
-#else
-			${member.MemberName} = ar.Serialize(${member.MemberName}, typeof(${member.TypeName})) as ${member.TypeName};				
-#end
-#end
+			ProtocolSerializeTools.Serialize(ar, ref ${member.MemberName});
 #end
 		}
 	}

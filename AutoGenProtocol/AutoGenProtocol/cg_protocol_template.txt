@@ -51,29 +51,8 @@ namespace SHGame
 
 		public override void Serialize(MLWriter ar)
 		{				
-			base.Serialize(ar);
 #foreach($member in $BaseType.Members)
-#if (${member.IsArray})
-			// array
-			{
-				int ${member.MemberName}Length = ${member.MemberName}.Length;
-				ar.Serialize(ref ${member.MemberName}Length);
-				for(int i=0; i<${member.MemberName}Length; i++)
-				{
-#if (${member.IsBaseType})
-					ar.Serialize(ref ${member.MemberName}[i]);
-#else
-					${member.MemberName}[i] = ar.Serialize(${member.MemberName}[i], typeof(${member.TypeName})) as ${member.TypeName};				
-#end
-				}
-			}
-#else
-#if (${member.IsBaseType})
-			ar.Serialize(ref ${member.MemberName});
-#else
-			${member.MemberName} = ar.Serialize(${member.MemberName}, typeof(${member.TypeName})) as ${member.TypeName};					
-#end
-#end
+			ProtocolSerializeTools.Serialize(ar, ref ${member.MemberName});
 #end
 		}
 	}
