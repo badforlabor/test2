@@ -6,11 +6,15 @@
 namespace SHGame
 {
 	// $BaseType.comment
-	public class ${BaseType.TypeName}
+	public class ${BaseType.TypeName} : MLICommonObject
 	{
 #foreach($member in $BaseType.Members)
 		// ${member.Comment}
+#if (${member.IsArray})
+		public ${member.TypeName}[] ${member.MemberName};
+#else
 		public ${member.TypeName} ${member.MemberName};
+#end
 #end
 #if ($BaseType.Members.Count > 0)
 
@@ -23,9 +27,17 @@ namespace SHGame
 		public ${BaseType.TypeName}(
 #foreach($member in $BaseType.Members)
 #if ($i == $allsize)
+#if (${member.IsArray})
+				${member.TypeName}[] _${member.MemberName}
+#else
 				${member.TypeName} _${member.MemberName}
+#end
+#else
+#if (${member.IsArray})
+				${member.TypeName}[] _${member.MemberName},
 #else
 				${member.TypeName} _${member.MemberName},
+#end
 #end
 			#set ($i = $i + 1)
 #end
@@ -36,5 +48,32 @@ namespace SHGame
 #end
 		}
 #end
+
+		public void Serialize(MLISerialize ar)
+		{				
+#foreach($member in $BaseType.Members)
+#if (${member.IsArray})
+
+			int ${member.MemberName}Length = ar.IsReader ? 0 : ${member.MemberName}.Length;
+			ar.Serialize(ref ${member.MemberName}Length);
+			${member.MemberName} = ar.IsReader ? ${member.MemberName} : new ${member.TypeName}[${member.MemberName}Length];
+			for(int i=0; i<${member.MemberName}Length; i++)
+			{
+#if (${member.IsBaseType})
+				ar.Serialize(ref ${member.MemberName}[i]);
+#else
+				${member.MemberName}[i] = ar.Serialize(${member.MemberName}[i], typeof(${member.TypeName})) as ${member.TypeName};				
+#end
+			}
+			
+#else
+#if (${member.IsBaseType})
+			ar.Serialize(ref ${member.MemberName});
+#else
+			${member.MemberName} = ar.Serialize(${member.MemberName}, typeof(${member.TypeName})) as ${member.TypeName};				
+#end
+#end
+#end
+		}
 	}
 }

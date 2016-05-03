@@ -20,6 +20,9 @@ namespace AutoGenProtocol
         public string TypeName { get; set; }
         public string MemberName { get; set; }
         public string Comment { get; set; }
+        public bool IsArray { get; set; }
+        // int，bool，string等才算是基础类型
+        public bool IsBaseType { get; set; }
     }
     public class BaseType
     {
@@ -132,6 +135,8 @@ namespace AutoGenProtocol
                 mt.Comment = node.Attributes["comment"] == null ? "" : node.Attributes["comment"].Value;
                 mt.TypeName = node.Attributes["type"].Value;
                 mt.MemberName = ToMarked(node.Attributes["name"].Value);
+                mt.IsArray = (node.Attributes["array"] == null) ? false : node.Attributes["array"].Value.Equals("1");
+                mt.IsBaseType = (mt.TypeName == "bool" || mt.TypeName == "int" || mt.TypeName.ToLower() == "string");
                 baseType.Members.Add(mt);
             }
 

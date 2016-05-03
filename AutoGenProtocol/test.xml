@@ -5,12 +5,21 @@
 	<baseType name="AchievementModel" comment="成就" folder="Data">
 		<member type="int" name="template_id" comment="模板id" />
 		<member type="string" name="template_name" comment="模板name" />
+		<member type="string" name="active_codes" comment="成员变量注释" array="1"/>
+		<member type="AchievementModel" name="datas" comment="数据" array="1"/>
 	</baseType>
 	
 	<protocol name="cg_active" comment="协议注释">
+		<member type="string" name="active_code" comment="成员变量注释"/>
+		<member type="AchievementModel" name="data" comment="数据" />
+		<member type="string" name="active_codes" comment="成员变量注释" array="1"/>
+		<member type="AchievementModel" name="datas" comment="数据" array="1"/>
 	</protocol>
 	
 	<protocol name="gc_active" comment="协议注释">
 		<member type="string" name="active_code" comment="成员变量注释"/>
+		<member type="AchievementModel" name="data" comment="数据" />
+		<member type="string" name="active_codes" comment="成员变量注释" array="1"/>
+		<member type="AchievementModel" name="datas" comment="数据" array="1"/>
 	</protocol>
 </root>

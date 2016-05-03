@@ -6,12 +6,16 @@
 namespace SHGame
 {
 	// $BaseType.comment
-	[SHMessageProvider(SHMessageType.${BaseType.TypeName}Data)]
+	[SHMessageAttribute(SHMessageType.${BaseType.TypeName}Data)]
 	public class ${BaseType.TypeName} : SHGCMessage
 	{
 #foreach($member in $BaseType.Members)
 		// ${member.Comment}
+#if (${member.IsArray})
+		public ${member.TypeName}[] ${member.MemberName};
+#else
 		public ${member.TypeName} ${member.MemberName};
+#end
 #end
 #if ($BaseType.Members.Count > 0)
 
@@ -24,9 +28,17 @@ namespace SHGame
 		public ${BaseType.TypeName}(
 #foreach($member in $BaseType.Members)
 #if ($i == $allsize)
+#if (${member.IsArray})
+				${member.TypeName}[] _${member.MemberName}
+#else
 				${member.TypeName} _${member.MemberName}
+#end
+#else
+#if (${member.IsArray})
+				${member.TypeName}[] _${member.MemberName},
 #else
 				${member.TypeName} _${member.MemberName},
+#end
 #end
 			#set ($i = $i + 1)
 #end
@@ -37,5 +49,33 @@ namespace SHGame
 #end
 		}
 #end
+
+		public override void Serialize(MLReader ar)
+		{				
+			base.Serialize(ar);		
+#foreach($member in $BaseType.Members)
+#if (${member.IsArray})
+
+			int ${member.MemberName}Length = 0;
+			ar.Serialize(ref ${member.MemberName}Length);
+			${member.MemberName} = new ${member.TypeName}[${member.MemberName}Length];
+			for(int i=0; i<${member.MemberName}Length; i++)
+			{
+#if (${member.IsBaseType})
+				ar.Serialize(ref ${member.MemberName}[i]);
+#else
+				${member.MemberName}[i] = ar.Serialize(${member.MemberName}[i], typeof(${member.TypeName})) as ${member.TypeName};				
+#end
+			}
+			
+#else
+#if (${member.IsBaseType})
+			ar.Serialize(ref ${member.MemberName});
+#else
+			${member.MemberName} = ar.Serialize(${member.MemberName}, typeof(${member.TypeName})) as ${member.TypeName};				
+#end
+#end
+#end
+		}
 	}
 }
