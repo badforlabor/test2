@@ -30,13 +30,18 @@ namespace AutoGenProtocol
         public string Comment { get; set; }
         public List<MemberType> Members { get; set; }
     }
+    public class ClassID
+    {
+        public string Name { get; set; }
+        public string Value { get; set; }
+    }
     class Program
     {
         static string BaseDir = "auto_gen/";
         static void Main(string[] args)
         {
             XmlDocument xml = new XmlDocument();
-            xml.Load("D:\\liubo\\github2\\test2\\AutoGenProtocol\\test.xml");
+            xml.Load("D:\\liubo\\github2\\test2\\AutoGenProtocol\\protocols.xml");
             
             XmlNode env = xml.SelectSingleNode("/root/env");
             if (env != null)
@@ -58,6 +63,15 @@ namespace AutoGenProtocol
                 GenerateProtocol(protocols[i]);   
             }
             Console.WriteLine("root-name = " + xml.DocumentElement.Name);
+
+
+            // 生成message-id
+            List<string> protocolNames = new List<string>();
+            for (int i = 0; i < protocols.Count; i++)
+            {
+                protocolNames.Add(protocols[i].Attributes["name"].Value);
+            }
+            GenerateMessageType(protocolNames);
         }
         static void GenerateBaseType(XmlNode baseType)
         {
@@ -142,6 +156,95 @@ namespace AutoGenProtocol
 
             GenerateFile(baseType, templateFiles[templateid], folder);
         }
+        static void GenerateMessageType(List<string> protocolNames)
+        {
+            XmlDocument xmlIds = new XmlDocument();
+            xmlIds.Load("D:\\liubo\\github2\\test2\\AutoGenProtocol\\message-id.xml");
+            XmlNodeList ids = xmlIds.SelectNodes("/root/id");
+            List<ClassID> classIDs = new List<ClassID>();
+            for (int i = 0; i < ids.Count; i++)
+            {
+                classIDs.Add(new ClassID() { Name = ids[i].Attributes["name"].Value, Value = ids[i].Attributes["value"].Value.Trim() });
+            }
+
+            // 生成“唯一值”的函数
+            int ret = 1;
+            System.Func<int> GetId = delegate()
+            {
+                while (ret < 65535)
+                {
+                    if (classIDs.Find(x => x.Value.Equals(ret.ToString())) == null)
+                    {
+                        break;
+                    }
+                    ret++;
+                }
+                return ret;
+            };
+
+            // 插入新加的，保证protocol.xml和message_id.xml的顺序是一样的
+            int lastIdx = -1;
+            foreach (var pname in protocolNames)
+            {
+                int it = classIDs.FindIndex(x => x.Name == pname);
+                if (it == -1)
+                {
+                    // 新的，
+                    classIDs.Insert(lastIdx == -1 ? classIDs.Count : lastIdx, new ClassID() { Name = pname, Value = GetId().ToString() });
+                    lastIdx = classIDs.Count;
+                }
+                else
+                {
+                    lastIdx = it;
+                }
+            }
+            // 删掉无效的
+            for (int i = 0; i < classIDs.Count; i++)
+            {
+                if (protocolNames.Find(x => x == classIDs[i].Name) == null)
+                {
+                    classIDs.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            // 生成.cs文件
+            GenerateClassIDs(classIDs);
+
+            // 生成.xml文件
+            XmlNode idRoot = xmlIds.SelectSingleNode("/root");
+            idRoot.RemoveAll();
+            for (int i = 0; i < classIDs.Count; i++)
+            {
+                XmlElement ele = xmlIds.CreateElement("id");
+                ele.SetAttribute("name", classIDs[i].Name);
+                ele.SetAttribute("value", classIDs[i].Value);
+                idRoot.AppendChild(ele);
+            }
+            xmlIds.Save("D:\\liubo\\github2\\test2\\AutoGenProtocol\\message-id.xml");
+        }
+        static void GenerateClassIDs(List<ClassID> classIDs)
+        {
+            BaseType bt = new BaseType();
+            bt.TypeName = "MessageType";
+            bt.Comment = "定义协议ID";
+            bt.Members = new List<MemberType>();
+            foreach (var it in classIDs)
+            {
+                string typeName = it.Name;
+                if (typeName.StartsWith("cg_"))
+                {
+                    typeName = "CG_" + typeName.Substring(3);
+                }
+                else if (typeName.StartsWith("gc_"))
+                {
+                    typeName = "GC_" + typeName.Substring(3);
+                }
+                bt.Members.Add(new MemberType() { TypeName = ToMarked(typeName), MemberName = it.Value });
+            }
+            GenerateFile(bt, "message_id_template.txt", "");
+        }
+
 
         static void GenerateFile(BaseType bt, string fileName, string folder)
         {

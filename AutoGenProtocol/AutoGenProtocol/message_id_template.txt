@@ -1,0 +1,14 @@
+/****************************************************************************
+ * author : auto-gen-tool
+ * purpose : 自动生成的代码，不要擅自修改
+ * purpose : $BaseType.comment
+****************************************************************************/
+namespace SHGame
+{
+	public static class SHMessageType
+	{
+#foreach($member in $BaseType.Members)
+		public const int ${member.TypeName}Data = ${member.MemberName};
+#end
+	}
+}
