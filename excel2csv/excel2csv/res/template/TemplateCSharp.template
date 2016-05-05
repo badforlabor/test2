@@ -1,0 +1,72 @@
+#macro( smallType $type)
+#if($type == "boolean")bool#elseif($type == "Boolean")bool#elseif( $type == "String" )string#elseif( $type == "Short" )short#elseif( $type == "Integer")int#elseif($type == "int")int#elseif( $type == "Long" )long#elseif( $type == "Float" )float#elseif( $type == "Double" )double#else $type#end
+#end
+#macro( readFunction $type)
+#if($type == "boolean" || $type == "bool")readBoolean#elseif($type == "Boolean")readBoolean#elseif( $type == "String")readString#elseif($type == "string")readString#elseif( $type == "Short")readShort#elseif($type == "short")readShort#elseif( $type == "Integer")readInteger#elseif($type == "int")readInteger#elseif( $type == "Long")readLong#elseif( $type == "long")readLong#elseif( $type == "Float")readFloat#elseif($type == "float")readFloat#elseif( $type == "Double")readDouble#elseif($type == "double")readDouble#else <$type>#end
+#end
+#macro( writeFunction $type)
+#if($type == "boolean" || $type == "bool")writeBoolean#elseif($type == "Boolean")writeBoolean#elseif( $type == "String")writeString#elseif($type == "string")writeString#elseif( $type == "Short")writeShort#elseif($type == "short")writeShort#elseif( $type == "Integer")writeInteger#elseif($type == "int")writeInteger#elseif( $type == "Long")writeLong#elseif($type == "long")writeLong#elseif( $type == "Float")writeFloat#elseif($type == "float")writeFloat#elseif( $type == "Double" )writeDouble#elseif($type == "double")writeDouble#else <$type>#end
+#end
+#macro( handleFunction $type)
+#if($type == "boolean" || $type == "bool")HandleBoolean#elseif($type == "Boolean")HandleBoolean#elseif( $type == "String")HandleString#elseif($type == "string")HandleString#elseif( $type == "Short")HandleShort#elseif($type == "short")HandleShort#elseif( $type == "Integer")HandleInteger#elseif($type == "int")HandleInteger#elseif( $type == "Long")HandleLong#elseif($type == "long")HandleLong#elseif( $type == "Float")HandleFloat#elseif($type == "float")HandleFloat#elseif( $type == "Double" )HandleDouble#elseif($type == "double")HandleDouble#elseif( $type == "Byte" )HandleByte#elseif($type == "byte")HandleByte#else <$type>#end
+#end
+/****************************************************************************
+Copyright (c) 2013-2014,Dalian-LingYOU tech.
+ This is not a free-ware .DO NOT use it without any authorization.
+ * 
+ * date : 2014/2/26 9:56:29
+ * author : Gang.Fang
+ * purpose : 
+****************************************************************************/
+using UnityEngine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+
+/**
+ * $comment
+ */
+namespace MLGame 
+{
+	[Serializable]
+#if($isExportCsvHead)
+	[MLCSVTemplateAttribute("$csvname")]
+#end
+	class ML$className : ML$father
+	{		
+#foreach($field in $fields)
+		/** $field.comment */
+		public #smallType($field.fieldType) $field.bigName;
+#end
+
+\#if USE_LOAD_CSV
+		protected override void OnLoad(ConfigLine line)
+		{
+			base.OnLoad(line);
+			
+#foreach($field in $fields)
+#if(${field.denominator}==1)
+			$field.bigName = line.GetColumn<#smallType($field.fieldType)>("$field.fieldName"); 
+#else
+			$field.bigName = line.GetColumn<#smallType($field.fieldType)>("$field.fieldName")/${field.denominator}; 
+#end
+#end			
+		}	
+#endif
+		
+		protected override void OnHanleData(MLArhive arhive)
+		{
+			base.OnHanleData(arhive);
+			
+#foreach($field in $fields)
+			arhive.#handleFunction($field.fieldType)(ref $field.bigName);
+#end
+		}
+				
+		public ML$className()
+		{
+			// !< WARN:just for DEBUG use, please do not instanciate a empty ML$className at regular code!
+		}
+	}
+}

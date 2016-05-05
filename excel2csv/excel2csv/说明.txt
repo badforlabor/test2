@@ -1,0 +1,6 @@
+﻿工具目的：
+	将excel文件转化成csv格式
+	必须文件：
+		1、总配置文件model_template_gen.xml，里面定义了excel对应的配置文件
+		2、各个excel对应的配置文件，放在model文件夹内
+		3、生成csharp代码的模板文件，放在template文件夹内
