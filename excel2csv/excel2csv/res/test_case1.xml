@@ -1,0 +1,9 @@
+<root coment="规则说明：每个excel标签标记真正的excel表；sheet标记表中的页，是按顺序摆放的">
+	<excel name="client" comment="客户端专用表client.xls" v1="5" v2="3.2" >
+		<sheet template="AbstractItemTemplate" >
+			<sheetpro value="1" />
+		</sheet>
+		<sheet template="AbstractItemTemplate" />
+		<sheet template="AbstractItemTemplate" />
+	</excel>	
+</root>

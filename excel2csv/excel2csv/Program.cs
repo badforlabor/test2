@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SHGame;
 
 namespace excel2csv
 {
@@ -10,6 +11,7 @@ namespace excel2csv
     {
         static void Main(string[] args)
         {
+            excel2classTest.Test();
         }
     }
 }
