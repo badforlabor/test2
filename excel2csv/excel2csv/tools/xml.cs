@@ -17,6 +17,21 @@ using System.Reflection;
 
 namespace SHGame
 {
+    public static class XmlAttributeCollectionExtension
+    {
+        public static XmlAttribute GetAttribute(this XmlAttributeCollection self, string key)
+        {
+            foreach (var it in self)
+            {
+                XmlAttribute attr = it as XmlAttribute;
+                if (attr.Name.Equals(key, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    return attr;
+                }
+            }
+            return null;
+        }
+    }
     public static class xml2class
     {
         public static List<T> Read<T>(string path)
@@ -33,8 +48,20 @@ namespace SHGame
         }
         public static List<object> Read(string path, Type classType, string tag)
         {
+#if false
+            // 读取文件内容，并且转化成小写格式，不过这样会导致xml中的value值也变成小写，所以放弃这种方式
+            string stringbuffer = File.ReadAllText(path);
+            stringbuffer = stringbuffer.ToLower();
+            byte[] string_array = Encoding.UTF8.GetBytes(stringbuffer);
+            MemoryStream stream = new MemoryStream(string_array);             //convert stream 2 string      
+            StreamReader reader = new StreamReader(stream);
+
+            XmlDocument xml = new XmlDocument();
+            xml.Load(reader);
+#else
             XmlDocument xml = new XmlDocument();
             xml.Load(path);
+#endif
             // 解析“/root/childtype”获得root节点和childtype字符串
             List<string> str_arr = split_string.SplitString<string>(tag, "/");
             XmlNode baseroot = xml;
@@ -77,9 +104,9 @@ namespace SHGame
 
                     string memberName = field.Name.ToLower();
                     // 如果是只读属性，那么过滤掉！
-                    if (xmldata.Attributes[memberName] != null)
+                    if (xmldata.Attributes.GetAttribute(memberName) != null)
                     {
-                        field.SetValue(obj, Convert.ChangeType(xmldata.Attributes[memberName].Value, field.FieldType));
+                        field.SetValue(obj, Convert.ChangeType(xmldata.Attributes.GetAttribute(memberName).Value, field.FieldType));
                     }
                 }
 
@@ -100,9 +127,9 @@ namespace SHGame
 
                     string memberName = prop.Name.ToLower();
                     // 如果是只读属性，那么过滤掉！
-                    if (xmldata.Attributes[memberName] != null)
+                    if (xmldata.Attributes.GetAttribute(memberName) != null)
                     {
-                        prop.SetValue(obj, Convert.ChangeType(xmldata.Attributes[memberName].Value, prop.PropertyType));
+                        prop.SetValue(obj, Convert.ChangeType(xmldata.Attributes.GetAttribute(memberName).Value, prop.PropertyType));
                     }
                 }
 
