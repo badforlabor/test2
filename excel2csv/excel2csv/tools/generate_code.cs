@@ -29,6 +29,10 @@ namespace SHGame
         // int，bool，string等才算是基础类型
         public bool IsBaseType { get; set; }
     }
+    public class CsvMemberType : MemberType
+    {
+        public int Denominator { get; set; }
+    }
     public class BaseType
     {
         public string TypeName { get; set; }

@@ -12,8 +12,8 @@ namespace excel2csv
         static void Main(string[] args)
         {
             excel2classTest.Test();
-            //new excel2csharp().DoAction("client");
-            new Excel2Csv().Test();
+            new excel2csharp().DoAction("client");
+            //new Excel2Csv().Test();
         }
     }
 }
