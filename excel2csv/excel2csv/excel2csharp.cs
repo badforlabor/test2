@@ -67,61 +67,66 @@ namespace SHGame
                 var sheetModel = excel.sheets[i];
                 List<XMLStruct.Column> cols = xml2class.Read<XMLStruct.Column>(string.Format(rootPath + "/model/{0}.xml", sheetModel.Template));
 
-                bool header = false;
+                // 设置csv的表头
+                csvBuffer.Append("id");
+                for (int j = 0; j < cols.Count; j++)
+                {
+                    if (!string.IsNullOrEmpty(cols[j].Ignore))
+                    {
+                        continue;
+                    }
+                    csvBuffer.Append(",");
+                    csvBuffer.Append(cols[j].ValueName);
+                }
+                csvBuffer.Append("\n");
 
-                for (int j = sheet.FirstRowNum; j < sheet.LastRowNum; j++)
+                // 设置具体内容
+                for (int j = 0; j < sheet.LastRowNum - sheet.FirstRowNum; j++)
                 {
                     HSSFRow row = sheet.GetRow(j) as HSSFRow;
-                    
+
+                    HSSFCell cell0 = row == null ? null : (row.GetCell(0) as HSSFCell);
+                    string cell0Value = cell0 == null ? "" : cell0.ToString().Trim();
                     // 以"#"开头的表示当前行为注释
-                    if (row.FirstCellNum < 0
-                            || string.IsNullOrEmpty((row.GetCell(row.FirstCellNum) as HSSFCell).ToString().Trim())
-                            || (row.GetCell(row.FirstCellNum) as HSSFCell).ToString().Trim().StartsWith("#"))
+                    if (string.IsNullOrEmpty(cell0Value) || cell0Value.StartsWith("#"))
                     {
-                        if (header)
-                        {
-                            throw new Exception("该行的第一个单元格格式错误！");
-                        }
                         continue;
                     }                    
                     
-                    for (int k = row.FirstCellNum; k < row.LastCellNum; k++)
+                    // 第0个元素一定是个id，int类型
+                    csvBuffer.Append(row.GetCell(0).NumericCellValue.ToString());
+                    for (int k = 0; k < cols.Count; k++)
                     {
-                        if (k > 0 && k-1 < cols.Count && string.IsNullOrEmpty(cols[k - 1].Ignore))
-                        {                            
-                        }
-                        else
+                        // 忽略列属性为Ignore的内容
+                        if (!string.IsNullOrEmpty(cols[k].Ignore))
                         {
-                            continue;
+                            continue;                          
                         }
                         
-                        HSSFCell cell = row.GetCell(k) as HSSFCell;
+                        // cols不包含第一列：id列
+                        HSSFCell cell = row.GetCell(k + 1) as HSSFCell;
 
-                        if (header)
+                        csvBuffer.Append(",");
+                        string cellvalue = GetCellValue(cell);
+
+                        // 非法检查
+                        if (cellvalue.IndexOfAny(new char[] { '\r', '\n' }) != -1)
                         {
-                            // 表头
-                            csvBuffer.Append(cell.ToString().Trim());
+                            throw new Exception(string.Format("{0}_{1}表格含有非法字段：row={2}, col={3}", shortname, sheetName, j, k+1));
                         }
-                        else
-                        { 
-                            // 
-                            csvBuffer.Append(cell.ToString().Trim());
-                        }
-                        if (k != row.LastCellNum - 1)
+                        else if (cellvalue.IndexOfAny(new char[] { ' ', ',', '\t' }) != -1)
                         {
-                            csvBuffer.Append(",");
+                            cellvalue = string.Format("\"{0}\"", cellvalue);
                         }
+
+                        csvBuffer.Append(cellvalue);
                     }
                     // 换行
                     csvBuffer.Append("\n");
-
-                    // 处理完表头了
-                    header = true;
                 }
 
                 // 导出到csv文件
-                File.WriteAllText(rootPath + "/csv/" + shortname + "_" + sheetName, csvBuffer.ToString());
-
+                GenerateCode.WriteAllText(rootPath + "/csv/" + shortname + "_" + sheetName + ".csv", csvBuffer.ToString());
                 
                 // 接下来生成csharp代码
                 BaseType bt = new BaseType();
@@ -146,6 +151,40 @@ namespace SHGame
                 }
                 GenerateCode.GenerateFile(bt, rootPath + "/template/TemplateCSharp.txt", rootPath + "/csharp/");
             }
+        }
+
+        static string GetCellValue(HSSFCell cell)
+        {
+            if (cell == null)
+            {
+                return "";
+            }
+
+            switch (cell.CellType)
+            {
+                case NPOI.SS.UserModel.CellType.Unknown:
+                    return "";
+                case NPOI.SS.UserModel.CellType.Numeric:
+                    return cell.NumericCellValue.ToString();
+                case NPOI.SS.UserModel.CellType.String:
+                    return cell.StringCellValue;
+                case NPOI.SS.UserModel.CellType.Formula:
+                    if (cell.CachedFormulaResultType == NPOI.SS.UserModel.CellType.Numeric)
+                    {
+                        return cell.NumericCellValue.ToString();
+                    }
+                    else
+                    {
+                        return cell.StringCellValue;
+                    }
+                case NPOI.SS.UserModel.CellType.Blank:
+                    return "";
+                case NPOI.SS.UserModel.CellType.Boolean:
+                    return cell.BooleanCellValue ? "1" : "0";
+                case NPOI.SS.UserModel.CellType.Error:
+                    return "";
+            }
+            return "";
         }
     }
 }

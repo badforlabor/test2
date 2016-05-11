@@ -1,0 +1,6 @@
+<root coment="第一例为id列，不填写，ValueType表示变量类型;ValueName表示变量名字;Denominator表示分母;NotNull是否不为空默认允许为空;Ignore表示忽略该列">
+	<column ValueType="string" ValueName="Name" NotNull="0" comment="声望分段名称"/>
+	<column ValueType="int" ValueName="minValue" />
+	<column ValueType="int" ValueName="maxValue" />
+	<column ValueType="string" ValueName="color" />
+</root>

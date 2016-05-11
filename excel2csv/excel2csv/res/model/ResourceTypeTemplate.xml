@@ -1,0 +1,11 @@
+<root coment="第一例为id列，不填写，ValueType表示变量类型;ValueName表示变量名字;Denominator表示分母;NotNull是否不为空默认允许为空;Ignore表示忽略该列">
+	<column ValueType="int" ValueName="bigType" NotNull="0" comment="注释拉"/>
+	<column ValueType="int" ValueName="smallType" />
+	<column ValueType="String" ValueName="icon" />
+	<column ValueType="bool" ValueName="wan" />
+	<column ValueType="String" ValueName="name" />
+	<column ValueType="String" ValueName="desc" />
+	<column ValueType="int" ValueName="itemId" />
+	<column ValueType="string" ValueName="tipBuy" />
+	<column ValueType="string" ValueName="tipGot" />
+</root>

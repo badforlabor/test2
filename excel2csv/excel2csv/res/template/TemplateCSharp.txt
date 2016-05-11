@@ -6,7 +6,7 @@
 namespace SHGame
 {
 	// $BaseType.comment
-	public class ${BaseType.TypeName} : MLICommonObject
+	public class SH${BaseType.TypeName} : MLICommonObject
 	{
 #foreach($member in $BaseType.Members)
 		// ${member.Comment}
@@ -17,11 +17,11 @@ namespace SHGame
 #end
 #end
 
-		public ${BaseType.TypeName}() {}
+		public SH${BaseType.TypeName}() {}
 
 #set($i = 0)
 #set($allsize = $BaseType.Members.Count - 1)
-		public ${BaseType.TypeName}(
+		public SH${BaseType.TypeName}(
 #foreach($member in $BaseType.Members)
 #if ($i == $allsize)
 #if (${member.IsArray})
