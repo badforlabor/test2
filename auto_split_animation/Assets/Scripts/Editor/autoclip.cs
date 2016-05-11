@@ -144,7 +144,8 @@ namespace MLGame
             string[] files = Directory.GetFiles(Application.dataPath + "/Art/", "animations*.xls", SearchOption.AllDirectories);
             foreach (var fileName in files)
             {
-                Debug.Log("读取xls文件：" + fileName);
+                DateTime excelTime = File.GetLastWriteTime(fileName);
+                Debug.Log("读取xls文件：" + fileName + ", file-write-time=" + excelTime.ToString());
                 Dictionary<string, ConfigFile> excels = ReadXML(fileName);// ReadXML(Application.dataPath + "/Art/animations.xls");
                 foreach (var it in excels)
                 {
@@ -155,6 +156,16 @@ namespace MLGame
                     {
                         string asset = AssetDatabase.GUIDToAssetPath(assets[0]);
                         
+						// 如果.meta时间和excel时间不一样，说明有变化，否则没变化的就直接跳过
+                        DateTime assetMetaTime = File.GetLastWriteTime(asset + ".meta");
+                        if (DateTime.Equals(assetMetaTime, excelTime))
+                        {
+                            // 文件没有变化，不处理
+                            Debug.Log("文件没有变化，不处理啦：" + asset);
+                            continue;
+                        }
+                        File.SetLastWriteTime(asset + ".meta", excelTime);
+						
                         ModelImporter modelImporter = (ModelImporter)AssetImporter.GetAtPath(asset);
 
                         SerializedObject serializedObject = modelImporter == null ? null : new SerializedObject(modelImporter);
