@@ -17,7 +17,7 @@
     <CompilerResponseFile></CompilerResponseFile>
     <UnityProjectType>Editor:5</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows:5</UnityBuildTarget>
-    <UnityVersion>4.6.3p1</UnityVersion>
+    <UnityVersion>4.6.3p3</UnityVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -60,20 +60,20 @@
     <Reference Include="UnityEditor.Graphs">
       <HintPath>Library\UnityAssemblies\UnityEditor.Graphs.dll</HintPath>
     </Reference>
-    <Reference Include="NPOI.OpenXmlFormats">
-      <HintPath>Assets\Scripts\Editor\npoi\NPOI.OpenXmlFormats.dll</HintPath>
-    </Reference>
     <Reference Include="ICSharpCode.SharpZipLib">
       <HintPath>Assets\Scripts\Editor\npoi\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="NPOI">
       <HintPath>Assets\Scripts\Editor\npoi\NPOI.dll</HintPath>
     </Reference>
+    <Reference Include="NPOI.OOXML">
+      <HintPath>Assets\Scripts\Editor\npoi\NPOI.OOXML.dll</HintPath>
+    </Reference>
     <Reference Include="NPOI.OpenXml4Net">
       <HintPath>Assets\Scripts\Editor\npoi\NPOI.OpenXml4Net.dll</HintPath>
     </Reference>
-    <Reference Include="NPOI.OOXML">
-      <HintPath>Assets\Scripts\Editor\npoi\NPOI.OOXML.dll</HintPath>
+    <Reference Include="NPOI.OpenXmlFormats">
+      <HintPath>Assets\Scripts\Editor\npoi\NPOI.OpenXmlFormats.dll</HintPath>
     </Reference>
     <Reference Include="SyntaxTree.VisualStudio.Unity.Bridge">
       <HintPath>Assets\UnityVS\Editor\SyntaxTree.VisualStudio.Unity.Bridge.dll</HintPath>
