@@ -45,6 +45,10 @@ namespace SHGame
         {
             return (vt == "bool" || vt == "int" || vt.ToLower() == "string");
         }
+        public static bool IsStringType(string vt)
+        {
+            return vt.ToLower().Equals("string");
+        }
         public static string ToMarked(string str)
         {
             string[] str_array = str.Split('_');
@@ -63,6 +67,17 @@ namespace SHGame
                 str_array[0] = (char)(str_array[0] + 'A' - 'a');
             }
             return new string(str_array);
+        }
+        public static void WriteAllText(string filename, string buffer)
+        {
+            if (File.Exists(filename))
+            {
+                if (File.ReadAllText(filename) == buffer)
+                {
+                    return;
+                }
+            }
+            File.WriteAllText(filename, buffer);
         }
         public static void GenerateFile(BaseType bt, string templateFile, string outputDir)
         {

@@ -1,8 +1,0 @@
-int featureResource;[notNull=false]//资源类型(索引资源引导表)
-int clientMsg;[notNull=false]//缺少该物品时的提示(索引client_msg)
-String name;//名字
-String desc;[notNull=false]//描述
-String icon;//图标
-int quality;[notNull=false]//品质
-int sortid; [notNull=false]  //排序类型
-int quickBuyID;[notNull=false]//快速购买的ID
