@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\LibreMath.cs" />
+    <Compile Include="Assets\Scripts\MoonInfo.cs" />
     <Compile Include="Assets\Scripts\StarInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2013\UnityVS.CSharp.targets" />

@@ -1,3 +1,11 @@
 unity4.6的工程
 设计目的：
 	强化学习坐标系之间的转化（设计Vector，Quaternion，Matrix）
+	
+数学公式涉及：
+	Matrix
+	Vector
+	Quaternion
+	Axis
+	Coordinate
+	旋转轴
