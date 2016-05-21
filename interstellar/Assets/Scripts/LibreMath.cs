@@ -30,6 +30,13 @@ public static class LibreMath
     }
     public static Vector3 ToAngle(Quaternion q)
     {
-        return q.eulerAngles;
+//         Matrix4x4 m = Matrix4x4.TRS(Vector3.zero, q, Vector3.one);
+//         return m.MultiplyVector(Vector3.forward);
+        return q * Vector3.forward;
+        //return q.eulerAngles;
+    }
+    public static Vector3 ToAngle2(Quaternion q)
+    {
+        return q * Vector3.forward;
     }
 }
