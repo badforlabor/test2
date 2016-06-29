@@ -44,9 +44,24 @@ namespace MyNet
         public void Destroy()
         {
             if (ClientSocket != null)
+            {
+                ClientSocket.Shutdown(SocketShutdown.Both);
                 ClientSocket.Close();
-            if(ServerSocket != null)
+                ClientSocket = null;
+            }
+            if (ServerSocket != null)
+            {
+                ServerSocket.Shutdown(SocketShutdown.Both);
                 ServerSocket.Close();            
+                ServerSocket = null;
+            }
+        }
+        // 模拟关闭客户端
+        public void SimulateDisconnect()
+        {
+            ClientSocket.Close();
+            ClientSocket = null;
+            ServerSocket.BeginAccept(ClientAccept, ServerSocket);
         }
         byte[] buffer = new byte[1024];
         List<byte> ReceivedBuffer = new List<byte>();
@@ -79,6 +94,8 @@ namespace MyNet
                 ClientSocket = client;
                 client.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, OnReceivewMsg, client);
             }
+            // 不再执行 ServerSocket.BeginAccept(ClientAccept, ServerSocket);
+            //  这样可以保证同一时刻，只连接一个客户端。
         }
         void OnReceivewMsg(IAsyncResult ar)
         {
@@ -87,12 +104,22 @@ namespace MyNet
                 var client = ar.AsyncState as Socket;
                 var length = client.EndReceive(ar);
 
-                semaphore.WaitOne();
-                for (int i = 0; i < length; i++)
-                    ReceivedBuffer.Add(buffer[i]);
-                semaphore.Release();                
+                if (length > 0)
+                {
+                    semaphore.WaitOne();
+                    for (int i = 0; i < length; i++)
+                        ReceivedBuffer.Add(buffer[i]);
+                    semaphore.Release();
 
-                client.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, OnReceivewMsg, client);
+                    client.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, OnReceivewMsg, client);
+                }
+                else
+                {
+                    // 客户端主动断开连接了。
+                    client.Close();
+                    ClientSocket = null;
+                    ServerSocket.BeginAccept(ClientAccept, ServerSocket);
+                }
             }
             catch (Exception)
             { }

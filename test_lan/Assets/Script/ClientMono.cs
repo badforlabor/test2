@@ -38,6 +38,14 @@ public class ClientMono : MonoBehaviour {
         {
             MyClient.SendMessage("你好！");
         }
+        if (GUI.Button(new Rect(Screen.width - 150, 170, 50, 20), "断开连接"))
+        {
+            MyClient.SimulateDisconnect();
+        }
+        if (GUI.Button(new Rect(Screen.width - 150, 230, 50, 20), "重连"))
+        {
+            MyClient.Reconn();
+        }
     }
     void OnReceiveMsg(int id, INetMessage msg)
     { 

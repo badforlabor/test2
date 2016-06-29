@@ -20,10 +20,15 @@ namespace MyNet
 
         Semaphore semaphore = new Semaphore(1, 1);
 
+        string SavedIP = "";
+        int SavedPort = 0;
         public void Start(string ip, int port, NetCenter.ReceiveMsgCallback callback)
         {
             if (Status != 0)
                 return;
+
+            SavedIP = ip;
+            SavedPort = port;
 
             Status = 1;
             Callback = callback;
@@ -35,13 +40,28 @@ namespace MyNet
         public void Tick()
         {
             TickReceive();
+
+            if (Client != null && !Client.Connected)
+            {
+                SimulateDisconnect();
+                Reconn();
+            }
+
+            // 自动重连
+            if (Client == null && Status == 1)
+            {
+                Reconn();
+            }
         }
         public void Destroy()
         {
             if (Client != null)
             {
+                Client.Shutdown(SocketShutdown.Both);
                 Client.Close();
+                Client = null;
             }
+            Status = 0;
         }
         public void SendMessage(string msg)
         {
@@ -49,7 +69,20 @@ namespace MyNet
             proto.msg = msg;
             NetCenter.Send(Client, proto);
         }
-#if ASYNC
+        public void Reconn()
+        {
+            Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            Client.Connect(SavedIP, SavedPort);
+            DoAsyncReceive();
+        }
+        // 模拟断开连接
+        public void SimulateDisconnect()
+        {
+            Client.Shutdown(SocketShutdown.Both);
+            Client.Disconnect(false);
+            Client = null;
+        }
+
         void DoAsyncReceive()
         {
             Client.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(ReceiveMessage), Client);
@@ -62,13 +95,23 @@ namespace MyNet
                 var client = ar.AsyncState as Socket;
                 var length = client.EndReceive(ar);
 
-                semaphore.WaitOne();
-                for (int i = 0; i < length; i++)
-                    ReceivedBuffer.Add(buffer[i]);
-                semaphore.Release();          
+                if (length > 0)
+                {
+                    semaphore.WaitOne();
+                    for (int i = 0; i < length; i++)
+                        ReceivedBuffer.Add(buffer[i]);
+                    semaphore.Release();
 
-                //接收下一个消息(因为这是一个递归的调用，所以这样就可以一直接收消息了）
-                client.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(ReceiveMessage), client);
+                    //接收下一个消息(因为这是一个递归的调用，所以这样就可以一直接收消息了）
+                    client.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(ReceiveMessage), client);
+                }
+                else
+                {
+                    // 服务器主动与自己关闭的时候
+                    client.Close();
+                    Client = null;
+                }
+
             }
             catch (Exception)
             {
@@ -96,33 +139,5 @@ namespace MyNet
             }
             semaphore.Release();
         }
-#else
-        void DoAsyncReceive()
-        { }
-        void TickReceive()
-        {
-            if (!bReady)
-                return;
-
-            // 如果发现断开连接了，那么尝试重练，返回
-            if (!Client.Connected)
-                return;
-
-            int length = Client.Receive(buffer);
-            if (length == 0)
-                return;
-
-            ReceivedBuffer.Clear();
-            do
-            {
-                ReceivedBuffer.AddRange(buffer);
-                length = Client.Receive(buffer);
-            }
-            while (length > 0);
-
-            // 解析
-            NetCenter.Dispatch(ReceivedBuffer.ToArray(), Callback);
-        }
-#endif
     }
 }

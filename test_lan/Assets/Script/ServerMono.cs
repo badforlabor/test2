@@ -38,6 +38,10 @@ public class ServerMono : MonoBehaviour {
             MyServer.Start(IP, ServerPoint, OnReceiveMsg);
             ServerIP = MyServer.ServerAddr.Address.ToString();
         }
+        if (GUI.Button(new Rect(30, 230, 100, 30), "断开连接"))
+        {
+            MyServer.SimulateDisconnect();
+        }
     }
     void OnReceiveMsg(int id, INetMessage arg)
     {
