@@ -12,6 +12,7 @@ public class ServerMono : MonoBehaviour {
     // http://www.cnblogs.com/chenxizhang/archive/2011/09/10/2172994.html
 
     public int ServerPoint = 13131;
+    public string IP = "192.168.2.160";
     string ServerIP;
     MyServerSocket MyServer = null;
 	// Use this for initialization
@@ -24,17 +25,23 @@ public class ServerMono : MonoBehaviour {
         MyServer.Tick();
 	}
 
+    void OnDestroy()
+    {
+        MyServer.Destroy();
+    }
+
     void OnGUI()
     {
         GUI.Label(new Rect(30, 30, 200, 30), "IP:" + ServerIP);
         if(GUI.Button(new Rect(30, 130, 100, 30), "启动"))
         {
-            MyServer.Start(ServerPoint, OnReceiveMsg);
+            MyServer.Start(IP, ServerPoint, OnReceiveMsg);
             ServerIP = MyServer.ServerAddr.Address.ToString();
         }
     }
-    void OnReceiveMsg(int id, INetMessage msg)
-    { 
-    
+    void OnReceiveMsg(int id, INetMessage arg)
+    {
+        NetCommonMsg msg = arg as NetCommonMsg;
+        Debug.Log("OnReceiveMsg: id=" + id + ", message=" + msg.msg);
     }
 }

@@ -61,7 +61,7 @@ namespace MyNet
             {
                 throw new Exception("error buffer");
             }
-            string v = BitConverter.ToString(Buffer, Pos, len);
+            string v = System.Text.UTF8Encoding.UTF8.GetString(Buffer, Pos, len);
             Pos += len;
 
             return v;
@@ -91,6 +91,10 @@ namespace MyNet
         public void Write(float v)
         {
             Buffer.AddRange(BitConverter.GetBytes(v));
+        }
+        public void Write(byte[] array)
+        {
+            Buffer.AddRange(array);
         }
         public void Write(string v)
         {

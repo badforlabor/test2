@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define ASYNC
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
@@ -17,9 +18,7 @@ namespace MyNet
         byte[] buffer = new byte[1024];
         List<byte> ReceivedBuffer = new List<byte>();
 
-        Thread AcceptThread = null;
-        bool bStop = false;
-        bool bReady = false;
+        Semaphore semaphore = new Semaphore(1, 1);
 
         public void Start(string ip, int port, NetCenter.ReceiveMsgCallback callback)
         {
@@ -29,13 +28,9 @@ namespace MyNet
             Status = 1;
             Callback = callback;
             Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            
-            AcceptThread = new Thread(delegate()
-            {
-                Client.Connect(ip, port);
-                bReady = true;
-            });
-            AcceptThread.Start();
+            Client.Connect(ip, port);
+
+            DoAsyncReceive();
         }
         public void Tick()
         {
@@ -43,11 +38,16 @@ namespace MyNet
         }
         public void Destroy()
         {
-            bStop = false;
             if (Client != null)
             {
                 Client.Close();
             }
+        }
+        public void SendMessage(string msg)
+        {
+            NetCommonMsg proto = new NetCommonMsg();
+            proto.msg = msg;
+            NetCenter.Send(Client, proto);
         }
 #if ASYNC
         void DoAsyncReceive()
@@ -59,23 +59,42 @@ namespace MyNet
         {
             try
             {
-                var socket = ar.AsyncState as Socket;
+                var client = ar.AsyncState as Socket;
+                var length = client.EndReceive(ar);
 
-                //方法参考：http://msdn.microsoft.com/zh-cn/library/system.net.sockets.socket.endreceive.aspx
-                var length = socket.EndReceive(ar);
-                if (length > 0)
-                { 
-                    
-                }
+                semaphore.WaitOne();
+                for (int i = 0; i < length; i++)
+                    ReceivedBuffer.Add(buffer[i]);
+                semaphore.Release();          
 
                 //接收下一个消息(因为这是一个递归的调用，所以这样就可以一直接收消息了）
-                socket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(ReceiveMessage), socket);
+                client.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, new AsyncCallback(ReceiveMessage), client);
             }
             catch (Exception)
             {
                 //Console.WriteLine(ex.Message);
             }
+        }
+        void TickReceive()
+        {
+            int cnt = 0;
+            semaphore.WaitOne();
+            cnt = ReceivedBuffer.Count;
+            semaphore.Release();
 
+            if (cnt == 0)
+            {
+                return;
+            }
+
+            semaphore.WaitOne();
+            ByteReader reader = new ByteReader(ReceivedBuffer.ToArray(), 0);
+            int LastPos = NetCenter.Dispatch(reader, Callback);
+            if (LastPos > 0)
+            {
+                ReceivedBuffer.RemoveRange(0, LastPos);
+            }
+            semaphore.Release();
         }
 #else
         void DoAsyncReceive()

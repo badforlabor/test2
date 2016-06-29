@@ -16,32 +16,27 @@ public class ClientMono : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        
+        MyClient = new MyClientSocket();
 	}
 	// Update is called once per frame
 	void Update () {
-        if (MyClient != null)
-        {
-            MyClient.Tick();
-        }
+
+        MyClient.Tick();
 	}
     void OnDestory()
     {
-        if (MyClient != null)
-        {
-            MyClient.Destroy();
-        }
+        MyClient.Destroy();
     }
 
     void OnGUI()
     {
         if (GUI.Button(new Rect(Screen.width - 150, 30, 50, 20), "连接"))
         {
-            if (MyClient == null)
-            {
-                MyClient = new MyClientSocket();
-            }
             MyClient.Start(ServerIp, ServerPort, OnReceiveMsg);
+        }
+        if (GUI.Button(new Rect(Screen.width - 150, 130, 50, 20), "发送消息"))
+        {
+            MyClient.SendMessage("你好！");
         }
     }
     void OnReceiveMsg(int id, INetMessage msg)
