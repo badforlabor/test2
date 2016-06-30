@@ -39,4 +39,28 @@ public static class LibreMath
     {
         return q * Vector3.forward;
     }
+
+    public static Matrix4x4 ToCoordinate(Vector3 forward)
+    {
+        // 默认根据世界坐标系，求出forward对应的坐标系
+        return ToCoordinate(forward, Vector3.up);
+    }
+    public static Matrix4x4 ToCoordinate(Vector3 forward, Vector3 upward)
+    { 
+        // 根据自己的朝向和父坐标系的Y轴，计算出自身坐标系
+
+        // unity中z轴就是面向方向
+        Vector3 z = forward.normalized;
+
+        Vector3 x = Vector3.Cross(upward, z).normalized;
+
+        Vector3 y = Vector3.Cross(z, x).normalized;
+
+        Matrix4x4 matrix = new Matrix4x4();
+        matrix.m00 = x.x; matrix.m01 = y.x; matrix.m02 = z.x;
+        matrix.m10 = x.y; matrix.m11 = y.y; matrix.m12 = z.y;
+        matrix.m20 = x.z; matrix.m21 = y.z; matrix.m22 = z.z;
+
+        return matrix;
+    }
 }
